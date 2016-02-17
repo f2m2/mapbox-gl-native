@@ -646,6 +646,9 @@ public class MapView extends FrameLayout {
      */
     @UiThread
     public void setMinZoom(@FloatRange(from = MapboxConstants.MINIMUM_ZOOM, to = MapboxConstants.MAXIMUM_ZOOM) double minZoom) {
+<<<<<<< f1e09ce42e64233f4c1962967433622471c6569d
+>>>>>>> [android] - Implements Android bindings for offline API
+=======
 >>>>>>> [android] - Implements Android bindings for offline API
         mNativeMapView.setMinZoom(minZoom);
     }
@@ -678,6 +681,9 @@ public class MapView extends FrameLayout {
      * @param enabled If true, the zoom controls are enabled.
      */
     public void setZoomControlsEnabled(boolean enabled) {
+<<<<<<< f1e09ce42e64233f4c1962967433622471c6569d
+>>>>>>> [android] - Implements Android bindings for offline API
+=======
 >>>>>>> [android] - Implements Android bindings for offline API
         mZoomButtonsController.setVisible(enabled);
     }
