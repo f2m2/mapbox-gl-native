@@ -1,7 +1,10 @@
 package com.mapbox.mapboxsdk.maps;
 
 import android.content.Context;
+<<<<<<< f9fd748547ce49d6e1b7174d7f511ccc2264166a
 
+=======
+>>>>>>> [android] - Implements Android bindings for offline API
 import android.location.Location;
 import android.os.Bundle;
 import android.os.SystemClock;
