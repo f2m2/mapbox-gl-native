@@ -1831,7 +1831,9 @@ void JNICALL listOfflineRegions(JNIEnv *env, jobject obj, jlong defaultFileSourc
             env2->CallVoidMethod(listCallback, listOnListMethodId, jregions);
         }
 
-        // Detach when we're done
+        // Delete global refs and detach when we're done
+        env2->DeleteGlobalRef(obj);
+        env2->DeleteGlobalRef(listCallback);
         detach_jni_thread(theJVM, &env2, renderDetach);
     });
 }
