@@ -2585,7 +2585,8 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return JNI_ERR;
     }
 
-    offlineRegionDefinitionClass = env->FindClass("com/mapbox/mapboxsdk/offline/OfflineRegionDefinition");
+    // This needs to be updated once we support more than one type of region definition
+    offlineRegionDefinitionClass = env->FindClass("com/mapbox/mapboxsdk/offline/OfflineTilePyramidRegionDefinition");
     if (offlineRegionDefinitionClass == nullptr) {
         env->ExceptionDescribe();
         return JNI_ERR;

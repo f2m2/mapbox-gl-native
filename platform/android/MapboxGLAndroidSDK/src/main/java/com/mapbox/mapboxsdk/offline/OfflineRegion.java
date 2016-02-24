@@ -9,8 +9,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * For the present, a tile pyramid is the only type of offline region. In the future,
- * other definition types will be available and this will be a variant type.
+ * To use offline maps on mobile, you will first have to create an offline region.
+ * Use OfflineManager.createOfflineRegion() to create a new offline region.
  */
 public class OfflineRegion {
 
