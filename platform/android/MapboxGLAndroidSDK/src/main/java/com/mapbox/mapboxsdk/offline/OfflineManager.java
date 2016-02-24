@@ -16,7 +16,11 @@ public class OfflineManager {
     // Default database name
     private final static String OFFLINE_DATABASE_NAME = "mbgl-offline.db";
 
-    // Resources required by offline regions are exempt from this limit
+    /*
+     * The maximumCacheSize parameter is a limit applied to non-offline resources only,
+     * i.e. resources added to the database for the "ambient use" caching functionality.
+     * There is no size limit for offline resources.
+     */
     private final static long DEFAULT_MAX_CACHE_SIZE = 50 * 1024 * 1024;
 
     // Holds the pointer to JNI DefaultFileSource
