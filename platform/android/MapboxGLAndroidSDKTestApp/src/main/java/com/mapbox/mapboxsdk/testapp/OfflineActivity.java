@@ -299,7 +299,7 @@ public class OfflineActivity extends AppCompatActivity
                     // Download complete
                     endProgress("Region downloaded successfully.");
                     return;
-                } else if (!status.isRequiredResourceCountPrecise()) {
+                } else if (status.isRequiredResourceCountPrecise()) {
                     // Switch to determinate state
                     setPercentage((int) Math.round(percentage));
                 }
