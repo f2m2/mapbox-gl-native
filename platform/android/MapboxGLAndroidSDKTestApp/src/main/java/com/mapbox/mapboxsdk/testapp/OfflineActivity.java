@@ -39,6 +39,8 @@ public class OfflineActivity extends AppCompatActivity
 
     private final static String LOG_TAG = "OfflineActivity";
 
+    private final static String KEY_REGION_NAME = "KEY_REGION_NAME";
+
     /*
      * UI elements
      */
@@ -219,19 +221,15 @@ public class OfflineActivity extends AppCompatActivity
             }
 
             private String getRegionName(OfflineRegion offlineRegion) {
-                String regionName;
+                String regionName = "Region " + offlineRegion.getID();
 
-                // Known issue
-                regionName = "Region " + offlineRegion.getID();
-
-//                try {
-//                    byte[] metadata = offlineRegion.getMetadata().getMetadata();
-//                    HashMap<String, String> data = (HashMap<String, String>) OfflineRegionMetadata.deserialize(metadata);
-//                    regionName = data.get("name");
-//                } catch (Exception e) {
-//                    Log.d(LOG_TAG, "Failed to decode metadata: " + e.getMessage());
-//                    regionName = "Region " + offlineRegion.getID();
-//                }
+                try {
+                    byte[] metadata = offlineRegion.getMetadata().getMetadata();
+                    HashMap<String, String> data = (HashMap<String, String>) OfflineRegionMetadata.deserialize(metadata);
+                    regionName = data.get(KEY_REGION_NAME);
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, "Failed to decode metadata: " + e.getMessage());
+                }
 
                 return regionName;
             }
@@ -262,7 +260,7 @@ public class OfflineActivity extends AppCompatActivity
         OfflineRegionMetadata metadata = null;
         try {
             HashMap<String, String> data = new HashMap<>();
-            data.put("name", regionName);
+            data.put(KEY_REGION_NAME, regionName);
             byte[] dataEncoded = OfflineRegionMetadata.serialize(data);
             metadata = new OfflineRegionMetadata(dataEncoded);
         } catch (IOException e) {
