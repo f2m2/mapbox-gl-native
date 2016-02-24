@@ -435,74 +435,20 @@ std::pair<mbgl::AnnotationSegment, mbgl::ShapeAnnotation::Properties> annotation
     return std::make_pair(segment, shapeProperties);
 }
 
-/*
- * Adapted from https://github.com/dropbox/djinni/blob/master/support-lib/jni/Marshal.hpp
- */
-
-void jniExceptionCheck(JNIEnv * env) {
-    if (!env) {
-        mbgl::Log::Error(mbgl::Event::JNI, "Empty environment.");
-        abort();
-    }
-
-    const jthrowable e(env->ExceptionOccurred());
-    if (e) {
-        env->ExceptionClear();
-    }
+static std::vector<uint8_t> metadata_from_java(JNIEnv* env, jbyteArray j) {
+    mbgl::Log::Debug(mbgl::Event::JNI, "metadata_from_java");
+    jsize length = env->GetArrayLength(j);
+    std::vector<uint8_t> c;
+    c.resize(length);
+    env->GetByteArrayRegion(j, 0, length, reinterpret_cast<jbyte*>(c.data()));
+    return c;
 }
 
-static std::vector<uint8_t> metadata_from_java(JNIEnv* jniEnv, jbyteArray j) {
-    assert(j != nullptr);
-
-    std::vector<uint8_t> ret;
-    jsize length = jniEnv->GetArrayLength(j);
-    jniExceptionCheck(jniEnv);
-
-    if (!length) {
-        mbgl::Log::Error(mbgl::Event::JNI, "jbyteArray was empty.");
-        return ret;
-    }
-
-    {
-        auto deleter = [jniEnv, j] (void* c) {
-            if (c) {
-                jniEnv->ReleasePrimitiveArrayCritical(j, c, JNI_ABORT);
-            }
-        };
-
-        std::unique_ptr<uint8_t, decltype(deleter)> ptr(
-            reinterpret_cast<uint8_t*>(jniEnv->GetPrimitiveArrayCritical(j, nullptr)),
-            deleter
-        );
-
-        if (ptr) {
-            // Construct and then move-assign. This copies the elements only once,
-            // and avoids having to initialize before filling (as with resize())
-            ret = std::vector<uint8_t>{ptr.get(), ptr.get() + length};
-        } else {
-            // Something failed.
-            jniExceptionCheck(jniEnv);
-        }
-    }
-
-    mbgl::Log::Error(mbgl::Event::JNI, "jbyteArray conversion completed.");
-    return ret;
-}
-
-static jbyteArray metadata_from_native(JNIEnv* jniEnv, const std::vector<uint8_t>& c) {
-    assert(c.size() <= std::numeric_limits<jsize>::max());
-    jbyteArray j = jniEnv->NewByteArray(static_cast<jsize>(c.size()));
-    jniExceptionCheck(jniEnv);
-
-    // Using .data() on an empty vector is UB
-    if(c.empty()) {
-        mbgl::Log::Error(mbgl::Event::JNI, "std::vector<uint8_t> was empty.");
-        return j;
-    }
-
-    jniEnv->SetByteArrayRegion(j, 0, c.size(), reinterpret_cast<const jbyte*>(c.data()));
-
-    mbgl::Log::Error(mbgl::Event::JNI, "std::vector<uint8_t> conversion completed.");
+static jbyteArray metadata_from_native(JNIEnv* env, const std::vector<uint8_t>& c) {
+    mbgl::Log::Debug(mbgl::Event::JNI, "metadata_from_java");
+    jsize length = static_cast<jsize>(c.size());
+    jbyteArray j = env->NewByteArray(length);
+    env->SetByteArrayRegion(j, 0, c.size(), reinterpret_cast<const jbyte*>(c.data()));
     return j;
 }
 
@@ -1817,7 +1763,11 @@ void JNICALL listOfflineRegions(JNIEnv *env, jobject obj, jlong defaultFileSourc
                 jobject jregion = env2->NewObject(offlineRegionClass, offlineRegionConstructorId);
                 env2->SetObjectField(jregion, offlineRegionOfflineManagerId, obj);
                 env2->SetLongField(jregion, offlineRegionIdId, region.getID());
-                env2->SetObjectField(jregion, offlineRegionMetadataId, metadata_from_native(env2, region.getMetadata()));
+                
+                // Metadata object
+                jbyteArray metadata = metadata_from_native(env2, region.getMetadata());
+                jobject jmetadata = env2->NewObject(offlineRegionMetadataClass, offlineRegionMetadataConstructorId, metadata);
+                env2->SetObjectField(jregion, offlineRegionMetadataId, jmetadata);
 
                 // Moves the region on the stack into a heap-allocated one
                 env2->SetLongField(jregion, offlineRegionPtrId,
@@ -1896,7 +1846,11 @@ void JNICALL createOfflineRegion(JNIEnv *env, jobject obj, jlong defaultFileSour
             jobject jregion = env2->NewObject(offlineRegionClass, offlineRegionConstructorId);
             env2->SetObjectField(jregion, offlineRegionOfflineManagerId, obj);
             env2->SetLongField(jregion, offlineRegionIdId, region->getID());
-            env2->SetObjectField(jregion, offlineRegionMetadataId, metadata_from_native(env2, region->getMetadata()));
+
+            // Metadata object
+            jbyteArray xmetadata = metadata_from_native(env2, region->getMetadata());
+            jobject xjmetadata = env2->NewObject(offlineRegionMetadataClass, offlineRegionMetadataConstructorId, xmetadata);
+            env2->SetObjectField(jregion, offlineRegionMetadataId, xjmetadata);
 
             // Moves the region on the stack into a heap-allocated one
             env2->SetLongField(jregion, offlineRegionPtrId,
