@@ -1812,16 +1812,16 @@ void JNICALL listOfflineRegions(JNIEnv *env, jobject obj, jlong defaultFileSourc
             // Build jobjectArray
             jsize index = 0;
             jobjectArray jregions = env2->NewObjectArray(regions->size(), offlineRegionClass, NULL);
-            for (std::vector<mbgl::OfflineRegion>::iterator region = regions->begin(); region != regions->end(); ++region) {
+            for (auto& region : *regions) {
                 // Build the Region object
                 jobject jregion = env2->NewObject(offlineRegionClass, offlineRegionConstructorId);
                 env2->SetObjectField(jregion, offlineRegionOfflineManagerId, obj);
-                env2->SetLongField(jregion, offlineRegionIdId, region->getID());
-                env2->SetObjectField(jregion, offlineRegionMetadataId, metadata_from_native(env2, region->getMetadata()));
+                env2->SetLongField(jregion, offlineRegionIdId, region.getID());
+                env2->SetObjectField(jregion, offlineRegionMetadataId, metadata_from_native(env2, region.getMetadata()));
 
                 // Moves the region on the stack into a heap-allocated one
                 env2->SetLongField(jregion, offlineRegionPtrId,
-                    reinterpret_cast<jlong>(new mbgl::OfflineRegion(std::move(*region))));
+                    reinterpret_cast<jlong>(new mbgl::OfflineRegion(std::move(region))));
 
                 env2->SetObjectArrayElement(jregions, index, jregion);
                 index++;
