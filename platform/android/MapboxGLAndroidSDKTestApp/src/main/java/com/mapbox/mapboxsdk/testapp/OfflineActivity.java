@@ -22,7 +22,7 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.offline.OfflineManager;
 import com.mapbox.mapboxsdk.offline.OfflineRegion;
-import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
+import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
 import com.mapbox.mapboxsdk.offline.OfflineRegionError;
 import com.mapbox.mapboxsdk.offline.OfflineRegionMetadata;
 import com.mapbox.mapboxsdk.offline.OfflineRegionStatus;
@@ -255,7 +255,7 @@ public class OfflineActivity extends AppCompatActivity
         double minZoom = mMapView.getZoom();
         double maxZoom = mMapboxMap.getMaxZoom();
         float pixelRatio = this.getResources().getDisplayMetrics().density;
-        OfflineRegionDefinition definition = new OfflineRegionDefinition(
+        OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
                 styleURL, bounds, minZoom, maxZoom, pixelRatio);
 
         // Sample way of encoding metadata
