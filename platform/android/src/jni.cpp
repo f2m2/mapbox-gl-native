@@ -1790,12 +1790,13 @@ void JNICALL listOfflineRegions(JNIEnv *env, jobject obj, jlong defaultFileSourc
         return;
     }
 
-    // Makes sure the callback doesn't get GC'ed
+    // Makes sure the objects don't get GC'ed
+    obj = reinterpret_cast<jobject>(env->NewGlobalRef(obj));
     listCallback = reinterpret_cast<jobject>(env->NewGlobalRef(listCallback));
 
     // Launch listCallback
     mbgl::DefaultFileSource *defaultFileSource = reinterpret_cast<mbgl::DefaultFileSource *>(defaultFileSourcePtr);
-    defaultFileSource->listOfflineRegions([defaultFileSourcePtr, listCallback](std::exception_ptr error, mbgl::optional<std::vector<mbgl::OfflineRegion>> regions) {
+    defaultFileSource->listOfflineRegions([obj, defaultFileSourcePtr, listCallback](std::exception_ptr error, mbgl::optional<std::vector<mbgl::OfflineRegion>> regions) {
 
         // Reattach, the callback comes from a different thread
         JNIEnv *env2;
@@ -1808,17 +1809,13 @@ void JNICALL listOfflineRegions(JNIEnv *env, jobject obj, jlong defaultFileSourc
             std::string message = mbgl::util::toString(error);
             env2->CallVoidMethod(listCallback, listOnErrorMethodId, std_string_to_jstring(env2, message));
         } else if (regions) {
-            // Build the OfflineManager object
-            jobject jmanager = env2->NewObject(offlineManagerClass, offlineManagerClassConstructorId);
-            env2->SetLongField(jmanager, offlineManagerClassPtrId, defaultFileSourcePtr);
-
             // Build jobjectArray
             jsize index = 0;
             jobjectArray jregions = env2->NewObjectArray(regions->size(), offlineRegionClass, NULL);
             for (std::vector<mbgl::OfflineRegion>::iterator region = regions->begin(); region != regions->end(); ++region) {
                 // Build the Region object
                 jobject jregion = env2->NewObject(offlineRegionClass, offlineRegionConstructorId);
-                env2->SetObjectField(jregion, offlineRegionOfflineManagerId, jmanager);
+                env2->SetObjectField(jregion, offlineRegionOfflineManagerId, obj);
                 env2->SetLongField(jregion, offlineRegionIdId, region->getID());
                 env2->SetObjectField(jregion, offlineRegionMetadataId, metadata_from_native(env2, region->getMetadata()));
 
@@ -1874,12 +1871,13 @@ void JNICALL createOfflineRegion(JNIEnv *env, jobject obj, jlong defaultFileSour
         metadata = metadata_from_java(env, jmetadata);
     }
 
-    // Makes sure the callback doesn't get GC'ed
+    // Makes sure the objects don't get GC'ed
+    obj = reinterpret_cast<jobject>(env->NewGlobalRef(obj));
     createCallback = reinterpret_cast<jobject>(env->NewGlobalRef(createCallback));
 
     // Launch createCallback
     mbgl::DefaultFileSource *defaultFileSource = reinterpret_cast<mbgl::DefaultFileSource *>(defaultFileSourcePtr);
-    defaultFileSource->createOfflineRegion(definition, metadata, [defaultFileSourcePtr, createCallback] (std::exception_ptr error, mbgl::optional<mbgl::OfflineRegion> region) {
+    defaultFileSource->createOfflineRegion(obj, definition, metadata, [defaultFileSourcePtr, createCallback] (std::exception_ptr error, mbgl::optional<mbgl::OfflineRegion> region) {
 
         // Reattach, the callback comes from a different thread
         JNIEnv *env2;
@@ -1892,13 +1890,9 @@ void JNICALL createOfflineRegion(JNIEnv *env, jobject obj, jlong defaultFileSour
             std::string message = mbgl::util::toString(error);
             env2->CallVoidMethod(createCallback, createOnErrorMethodId, std_string_to_jstring(env2, message));
         } else if (region) {
-            // Build the OfflineManager object
-            jobject jmanager = env2->NewObject(offlineManagerClass, offlineManagerClassConstructorId);
-            env2->SetLongField(jmanager, offlineManagerClassPtrId, defaultFileSourcePtr);
-
             // Build the Region object
             jobject jregion = env2->NewObject(offlineRegionClass, offlineRegionConstructorId);
-            env2->SetObjectField(jregion, offlineRegionOfflineManagerId, jmanager);
+            env2->SetObjectField(jregion, offlineRegionOfflineManagerId, obj);
             env2->SetLongField(jregion, offlineRegionIdId, region->getID());
             env2->SetObjectField(jregion, offlineRegionMetadataId, metadata_from_native(env2, region->getMetadata()));
 
