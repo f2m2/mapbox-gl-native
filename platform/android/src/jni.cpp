@@ -1860,7 +1860,9 @@ void JNICALL createOfflineRegion(JNIEnv *env, jobject obj, jlong defaultFileSour
             env2->CallVoidMethod(createCallback, createOnCreateMethodId, jregion);
         }
 
-        // Detach when we're done
+        // Delete global refs and detach when we're done
+        env2->DeleteGlobalRef(obj);
+        env2->DeleteGlobalRef(createCallback);
         detach_jni_thread(theJVM, &env2, renderDetach);
     });
 }
@@ -1909,7 +1911,8 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             env2->SetBooleanField(jstatus, offlineRegionStatusRequiredResourceCountIsIndeterminateId, status.requiredResourceCountIsIndeterminate);
             env2->CallVoidMethod(observerCallback, offlineRegionObserveronStatusChangedId, jstatus);
 
-            // Detach when we're done
+            // Delete global refs and detach when we're done
+            env2->DeleteGlobalRef(observerCallback);
             detach_jni_thread(theJVM, &env2, renderDetach);
         }
 
@@ -1924,7 +1927,8 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             env2->SetObjectField(jerror, offlineRegionErrorMessageId, std_string_to_jstring(env2, error.message));
             env2->CallVoidMethod(observerCallback, offlineRegionObserveronErrorId, jerror);
 
-            // Detach when we're done
+            // Delete global refs and detach when we're done
+            env2->DeleteGlobalRef(observerCallback);
             detach_jni_thread(theJVM, &env2, renderDetach);
         }
 
@@ -2015,7 +2019,8 @@ void JNICALL getOfflineRegionStatus(JNIEnv *env, jobject obj, jobject offlineReg
             env2->CallVoidMethod(statusCallback, offlineRegionStatusOnStatusId, jstatus);
         }
 
-        // Detach when we're done
+        // Delete global refs and detach when we're done
+        env2->DeleteGlobalRef(statusCallback);
         detach_jni_thread(theJVM, &env2, renderDetach);
     });
 }
@@ -2053,7 +2058,8 @@ void JNICALL deleteOfflineRegion(JNIEnv *env, jobject obj, jobject offlineRegion
             env2->CallVoidMethod(deleteCallback, offlineRegionDeleteOnDeleteId);
         }
 
-        // Detach when we're done
+        // Delete global refs and detach when we're done
+        env2->DeleteGlobalRef(deleteCallback);
         detach_jni_thread(theJVM, &env2, renderDetach);
     });
 }
