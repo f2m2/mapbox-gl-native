@@ -6,6 +6,7 @@
 #import "NSBundle+MGLAdditions.h"
 #import "NSException+MGLAdditions.h"
 #import "MGLAPIClient.h"
+#import "MGLLocationManagerUtility.h"
 
 #include <mbgl/platform/darwin/reachability.h>
 #include <sys/sysctl.h>
@@ -89,7 +90,7 @@ const NSTimeInterval MGLFlushInterval = 60;
 
 @end
 
-@interface MGLMapboxEvents () <CLLocationManagerDelegate>
+@interface MGLMapboxEvents () <MGLLocationManagerUtilityDelegate>
 
 @property (nonatomic) MGLMapboxEventsData *data;
 @property (nonatomic, copy) NSString *appBundleId;
@@ -106,7 +107,10 @@ const NSTimeInterval MGLFlushInterval = 60;
 @property (nonatomic) NS_MUTABLE_ARRAY_OF(MGLMapboxEventAttributes *) *eventQueue;
 @property (nonatomic) dispatch_queue_t serialQueue;
 @property (nonatomic) dispatch_queue_t debugLogSerialQueue;
-@property (nonatomic) CLLocationManager *locationManager;
+
+//@property (nonatomic) CLLocationManager *locationManager;
+@property (nonatomic) MGLLocationManagerUtility *locationManagerUtility;
+
 @property (nonatomic) NSTimer *timer;
 
 @end
@@ -122,7 +126,7 @@ const NSTimeInterval MGLFlushInterval = 60;
         [[NSUserDefaults standardUserDefaults] registerDefaults:@{
              @"MGLMapboxAccountType": accountTypeNumber ? accountTypeNumber : @0,
              @"MGLMapboxMetricsEnabled": @YES,
-             @"MGLMapboxMetricsDebugLoggingEnabled": @NO,
+             @"MGLMapboxMetricsDebugLoggingEnabled": @YES,
          }];
     }
 }
@@ -147,6 +151,8 @@ const NSTimeInterval MGLFlushInterval = 60;
         NSString *uniqueID = [[NSProcessInfo processInfo] globallyUniqueString];
         _serialQueue = dispatch_queue_create([[NSString stringWithFormat:@"%@.%@.events.serial", _appBundleId, uniqueID] UTF8String], DISPATCH_QUEUE_SERIAL);
 
+        _locationManagerUtility = [[MGLLocationManagerUtility alloc] init];
+        _locationManagerUtility.delegate = self;
         _paused = YES;
         [self resumeMetricsCollection];
         NSBundle *resourceBundle = [NSBundle mgl_frameworkBundle];
@@ -177,6 +183,7 @@ const NSTimeInterval MGLFlushInterval = 60;
         } else {
             self.canEnableDebugLogging = YES;
         }
+        
 
         // Watch for changes to telemetry settings by the user
         __weak MGLMapboxEvents *weakSelf = self;
@@ -228,39 +235,19 @@ const NSTimeInterval MGLFlushInterval = 60;
 
 - (void)validate {
     BOOL enabledInSettings = [[self class] isEnabled];
-    
+
+    // Toggle pause based on current pause state and current settings state
+    // Practically, a pause only occurs because of a previous change to settings
     if (self.paused && enabledInSettings) {
         [self resumeMetricsCollection];
     } else if (!self.paused && !enabledInSettings) {
         [self pauseMetricsCollection];
     }
-   
-    [self validateUpdatingLocation];
-}
-
-- (void)validateUpdatingLocation {
+    
     if (self.paused) {
-        [self stopUpdatingLocation];
+        [self.locationManagerUtility stopUpdatingLocation];
     } else {
-        switch ([CLLocationManager authorizationStatus]) {
-            case kCLAuthorizationStatusNotDetermined:
-            case kCLAuthorizationStatusRestricted:
-            case kCLAuthorizationStatusDenied:
-                [self stopUpdatingLocation];
-                break;
-            case kCLAuthorizationStatusAuthorized:
-                // Also handles kCLAuthorizationStatusAuthorizedAlways
-                [self startUpdatingLocation];
-                break;
-            case kCLAuthorizationStatusAuthorizedWhenInUse:
-                if (UIApplication.sharedApplication.applicationState == UIApplicationStateBackground) {
-                    // Prevent blue status bar when app is not in foreground
-                    [self stopUpdatingLocation];
-                } else {
-                    [self startUpdatingLocation];
-                }
-                break;
-        }
+        [self.locationManagerUtility startUpdatingLocation];
     }
 }
 
@@ -279,18 +266,7 @@ const NSTimeInterval MGLFlushInterval = 60;
     [self.eventQueue removeAllObjects];
     self.data = nil;
     
-    [self validateUpdatingLocation];
-}
-
-- (void)stopUpdatingLocation {
-    [self.locationManager stopUpdatingLocation];
-    
-    // -[CLLocationManager stopMonitoringVisits] is only available in iOS 8+.
-    if ([self.locationManager respondsToSelector:@selector(stopMonitoringVisits)]) {
-        [self.locationManager stopMonitoringVisits];
-    }
-    
-    self.locationManager = nil;
+    [self.locationManagerUtility stopUpdatingLocation];
 }
 
 + (void)resumeMetricsCollection {
@@ -305,28 +281,7 @@ const NSTimeInterval MGLFlushInterval = 60;
     self.paused = NO;
     self.data = [[MGLMapboxEventsData alloc] init];
     
-    [self validateUpdatingLocation];
-}
-
-- (void)startUpdatingLocation {
-    if (self.locationManager || self.paused) {
-        NSAssert(!(self.locationManager && self.paused),
-                 @"MGLMapboxEvents should not have a CLLocationManager while paused.");
-        return;
-    }
-    
-    CLLocationManager *locationManager = [[CLLocationManager alloc] init];
-    locationManager.delegate = self;
-    locationManager.desiredAccuracy = kCLLocationAccuracyKilometer;
-    locationManager.distanceFilter = 10;
-    [locationManager startUpdatingLocation];
-
-    // -[CLLocationManager startMonitoringVisits] is only available in iOS 8+.
-    if ([locationManager respondsToSelector:@selector(startMonitoringVisits)]) {
-        [locationManager startMonitoringVisits];
-    }
-    
-    self.locationManager = locationManager;
+    [self.locationManagerUtility startUpdatingLocation];
 }
 
 + (void)pushEvent:(NSString *)event withAttributes:(MGLMapboxEventAttributes *)attributeDictionary {
@@ -609,36 +564,52 @@ const NSTimeInterval MGLFlushInterval = 60;
     }
 }
 
-#pragma mark CLLocationManagerDelegate
+#pragma mark CLLocationManagerUtilityDelegate
 
-- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
-    //  Iterate through locations to pass all data
+- (void)locationManagerUtilityDelegate:(MGLLocationManagerUtility *)locationManagerUtility didUpdateLocations:(NSArray *)locations {
     for (CLLocation *loc in locations) {
         [MGLMapboxEvents pushEvent:MGLEventTypeLocation withAttributes:@{
-            MGLEventKeyLatitude: @(loc.coordinate.latitude),
-            MGLEventKeyLongitude: @(loc.coordinate.longitude),
-            MGLEventKeySpeed: @(loc.speed),
-            MGLEventKeyCourse: @(loc.course),
-            MGLEventKeyAltitude: @(round(loc.altitude)),
-            MGLEventKeyHorizontalAccuracy: @(round(loc.horizontalAccuracy)),
-            MGLEventKeyVerticalAccuracy: @(round(loc.verticalAccuracy))
-        }];
+                                                                         MGLEventKeyLatitude: @(loc.coordinate.latitude),
+                                                                         MGLEventKeyLongitude: @(loc.coordinate.longitude),
+                                                                         MGLEventKeySpeed: @(loc.speed),
+                                                                         MGLEventKeyCourse: @(loc.course),
+                                                                         MGLEventKeyAltitude: @(round(loc.altitude)),
+                                                                         MGLEventKeyHorizontalAccuracy: @(round(loc.horizontalAccuracy)),
+                                                                         MGLEventKeyVerticalAccuracy: @(round(loc.verticalAccuracy))
+                                                                         }];
     }
 }
 
-- (void)locationManager:(CLLocationManager *)manager didVisit:(CLVisit *)visit {
-    [MGLMapboxEvents pushEvent:MGLEventTypeVisit withAttributes:@{
-        MGLEventKeyLatitude: @(visit.coordinate.latitude),
-        MGLEventKeyLongitude: @(visit.coordinate.longitude),
-        MGLEventKeyHorizontalAccuracy: @(round(visit.horizontalAccuracy)),
-        MGLEventKeyArrivalDate: [[NSDate distantPast] isEqualToDate:visit.arrivalDate] ? [NSNull null] : [_rfc3339DateFormatter stringFromDate:visit.arrivalDate],
-        MGLEventKeyDepartureDate: [[NSDate distantFuture] isEqualToDate:visit.departureDate] ? [NSNull null] : [_rfc3339DateFormatter stringFromDate:visit.departureDate]
-    }];
-}
+#pragma mark CLLocationManagerDelegate
 
-- (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
-    [self validateUpdatingLocation];
-}
+//- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
+//    //  Iterate through locations to pass all data
+//    for (CLLocation *loc in locations) {
+//        [MGLMapboxEvents pushEvent:MGLEventTypeLocation withAttributes:@{
+//            MGLEventKeyLatitude: @(loc.coordinate.latitude),
+//            MGLEventKeyLongitude: @(loc.coordinate.longitude),
+//            MGLEventKeySpeed: @(loc.speed),
+//            MGLEventKeyCourse: @(loc.course),
+//            MGLEventKeyAltitude: @(round(loc.altitude)),
+//            MGLEventKeyHorizontalAccuracy: @(round(loc.horizontalAccuracy)),
+//            MGLEventKeyVerticalAccuracy: @(round(loc.verticalAccuracy))
+//        }];
+//    }
+//}
+
+//- (void)locationManager:(CLLocationManager *)manager didVisit:(CLVisit *)visit {
+//    [MGLMapboxEvents pushEvent:MGLEventTypeVisit withAttributes:@{
+//        MGLEventKeyLatitude: @(visit.coordinate.latitude),
+//        MGLEventKeyLongitude: @(visit.coordinate.longitude),
+//        MGLEventKeyHorizontalAccuracy: @(round(visit.horizontalAccuracy)),
+//        MGLEventKeyArrivalDate: [[NSDate distantPast] isEqualToDate:visit.arrivalDate] ? [NSNull null] : [_rfc3339DateFormatter stringFromDate:visit.arrivalDate],
+//        MGLEventKeyDepartureDate: [[NSDate distantFuture] isEqualToDate:visit.departureDate] ? [NSNull null] : [_rfc3339DateFormatter stringFromDate:visit.departureDate]
+//    }];
+//}
+//
+//- (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
+//    [self validateUpdatingLocation];
+//}
 
 #pragma mark MGLMapboxEvents Debug
 
