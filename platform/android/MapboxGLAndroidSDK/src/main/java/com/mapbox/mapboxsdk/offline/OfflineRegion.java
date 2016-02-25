@@ -187,10 +187,6 @@ public class OfflineRegion {
      * Eviction works by removing the least-recently requested resources not also required
      * by other regions, until the database shrinks below a certain size.
      *
-     * Note that this method takes ownership of the input, reflecting the fact that once
-     * region deletion is initiated, it is not legal to perform further actions with the
-     * region.
-     *
      * When the operation is complete or encounters an error, the given callback will be
      * executed on the main thread.
      */
