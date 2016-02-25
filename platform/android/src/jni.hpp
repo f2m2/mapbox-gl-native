@@ -106,7 +106,6 @@ extern jmethodID httpRequestCancelId;
 // Offline declarations start
 
 extern jclass offlineManagerClass;
-extern jmethodID offlineManagerClassConstructorId;
 extern jfieldID offlineManagerClassPtrId;
 
 extern jclass listOfflineRegionsCallbackClass;

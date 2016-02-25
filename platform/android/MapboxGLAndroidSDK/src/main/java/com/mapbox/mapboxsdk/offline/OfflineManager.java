@@ -50,10 +50,6 @@ public class OfflineManager {
      * Constructors
      */
 
-    private OfflineManager() {
-        // For JNI use only, use OfflineManager.getInstance() below obtain the instance
-    }
-
     private OfflineManager(Context context) {
         // Get a pointer to the DefaultFileSource instance
         String assetRoot = context.getFilesDir().getAbsolutePath();
