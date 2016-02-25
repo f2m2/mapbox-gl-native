@@ -1921,14 +1921,14 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             jboolean renderDetach = attach_jni_thread(theJVM, &env2, "Offline Thread");
 
             // Conver to jint
-            jint downloadState = -1;
-            if (status.downloadState == mbgl::OfflineRegionDownloadState::Inactive) {
-                downloadState = 0;
-            } else if (status.downloadState == mbgl::OfflineRegionDownloadState::Active) {
-                downloadState = 1;
-            } else {
-                mbgl::Log::Error(mbgl::Event::JNI, "Unsupported OfflineRegionDownloadState value.");
-                return;
+            jint downloadState;
+            switch(status.downloadState) {
+                case mbgl::OfflineRegionDownloadState::Inactive:
+                    downloadState = 0;
+                    break;
+                case mbgl::OfflineRegionDownloadState::Active:
+                    downloadState = 1;
+                    break;
             }
 
             // Stats object
