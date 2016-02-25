@@ -619,13 +619,6 @@ public class MapView extends FrameLayout {
     // Zoom
     //
 
-<<<<<<< f9fd748547ce49d6e1b7174d7f511ccc2264166a
-    double getZoom() {
-        return mNativeMapView.getZoom();
-    }
-
-    void setMinZoom(@FloatRange(from = MapboxConstants.MINIMUM_ZOOM, to = MapboxConstants.MAXIMUM_ZOOM) double minZoom) {
-=======
     /**
      * Returns the current zoom level of the map view.
      *
@@ -646,10 +639,6 @@ public class MapView extends FrameLayout {
      */
     @UiThread
     public void setMinZoom(@FloatRange(from = MapboxConstants.MINIMUM_ZOOM, to = MapboxConstants.MAXIMUM_ZOOM) double minZoom) {
-<<<<<<< f1e09ce42e64233f4c1962967433622471c6569d
->>>>>>> [android] - Implements Android bindings for offline API
-=======
->>>>>>> [android] - Implements Android bindings for offline API
         mNativeMapView.setMinZoom(minZoom);
     }
 
@@ -665,9 +654,6 @@ public class MapView extends FrameLayout {
         return mNativeMapView.getMaxZoom();
     }
 
-<<<<<<< f9fd748547ce49d6e1b7174d7f511ccc2264166a
-    void setZoomControlsEnabled(boolean enabled) {
-=======
     /**
      * <p>
      * Sets whether the zoom controls are enabled.
@@ -681,10 +667,6 @@ public class MapView extends FrameLayout {
      * @param enabled If true, the zoom controls are enabled.
      */
     public void setZoomControlsEnabled(boolean enabled) {
-<<<<<<< f1e09ce42e64233f4c1962967433622471c6569d
->>>>>>> [android] - Implements Android bindings for offline API
-=======
->>>>>>> [android] - Implements Android bindings for offline API
         mZoomButtonsController.setVisible(enabled);
     }
 
