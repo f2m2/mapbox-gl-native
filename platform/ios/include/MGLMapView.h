@@ -1254,6 +1254,24 @@ IB_DESIGNABLE
  */
 - (void)mapView:(MGLMapView *)mapView didDeselectAnnotation:(id <MGLAnnotation>)annotation;
 
+/** @name Map Interaction */
+
+/* Tells the delegate that the map was tapped outside of any annotations.
+ *
+ *  You can use this method to cancel overlays, remove dropped pins etc.
+ *
+ *  @param mapView The map view that was tapped.
+ *  @param coordinate The coordinate that was tapped. */
+- (void)mapView:(MGLMapView *)mapView singleTapOnMapAtCoordinate:(CLLocationCoordinate2D)coordinate;
+
+/* Tells the delegate that the map was long pressed outside of any annotations.
+ *
+ *  You can use this method to drop a pin on the map.
+ *
+ *  @param mapView The map view that was long pressed.
+ *  @param coordinate The coordinate that was long pressed. */
+- (void)mapView:(MGLMapView *)mapView longPressOnMapAtCoordinate:(CLLocationCoordinate2D)coordinate;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -166,6 +166,7 @@ public:
 @property (nonatomic) UIPinchGestureRecognizer *pinch;
 @property (nonatomic) UIRotationGestureRecognizer *rotate;
 @property (nonatomic) UILongPressGestureRecognizer *quickZoom;
+@property (nonatomic) UILongPressGestureRecognizer *longPress;
 @property (nonatomic) UIPanGestureRecognizer *twoFingerDrag;
 /// Mapping from reusable identifiers to annotation images.
 @property (nonatomic) NS_MUTABLE_DICTIONARY_OF(NSString *, MGLAnnotationImage *) *annotationImagesByIdentifier;
@@ -429,6 +430,12 @@ mbgl::Duration MGLDurationInSeconds(NSTimeInterval duration)
         [_quickZoom requireGestureRecognizerToFail:doubleTap];
         [self addGestureRecognizer:_quickZoom];
     }
+	
+	_longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPressGesture:)];
+	_longPress.numberOfTapsRequired = 0;
+	_longPress.minimumPressDuration = 0.5;
+	[self addGestureRecognizer:_longPress];
+
 
     // observe app activity
     //
@@ -1312,8 +1319,29 @@ mbgl::Duration MGLDurationInSeconds(NSTimeInterval duration)
     }
     else
     {
-        [self deselectAnnotation:self.selectedAnnotation animated:YES];
+		// deselect any selected annotation
+		if (self.selectedAnnotation) [self deselectAnnotation:self.selectedAnnotation animated:YES];
+		
+		// notify the delegate about a single tap on the map
+		if ([self.delegate respondsToSelector:@selector(mapView:singleTapOnMapAtCoordinate:)])
+		{
+			CLLocationCoordinate2D tapCoordinate = [self convertPoint:tapPoint toCoordinateFromView:self];
+			[self.delegate mapView:self singleTapOnMapAtCoordinate:tapCoordinate];
+		}
     }
+}
+
+- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)longPress
+{
+	if (longPress.state == UIGestureRecognizerStateBegan) {
+		// notify the delegate about a long press on the map
+		if ([self.delegate respondsToSelector:@selector(mapView:longPressOnMapAtCoordinate:)])
+		{
+			CGPoint tapPoint = [longPress locationInView:self];
+			CLLocationCoordinate2D tapCoordinate = [self convertPoint:tapPoint toCoordinateFromView:self];
+			[self.delegate mapView:self longPressOnMapAtCoordinate:tapCoordinate];
+		}
+	}
 }
 
 - (void)handleDoubleTapGesture:(UITapGestureRecognizer *)doubleTap
