@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -13,6 +14,8 @@ import java.lang.annotation.RetentionPolicy;
  * Use OfflineManager.createOfflineRegion() to create a new offline region.
  */
 public class OfflineRegion {
+
+    private final static String LOG_TAG = "OfflineRegion";
 
     // Parent OfflineManager
     private OfflineManager offlineManager;
@@ -222,6 +225,7 @@ public class OfflineRegion {
                     @Override
                     public void run() {
                         callback.onDelete();
+                        OfflineRegion.this.finalize();
                     }
                 });
             }
@@ -238,9 +242,22 @@ public class OfflineRegion {
         });
     }
 
+    @Override
+    protected void finalize() {
+        try {
+            super.finalize();
+            destroyOfflineRegion(mOfflineRegionPtr);
+            mOfflineRegionPtr = 0;
+        } catch (Throwable throwable) {
+            Log.e(LOG_TAG, "Failed to finalize OfflineRegion: " + throwable.getMessage());
+        }
+    }
+
     /*
      * Native methods
      */
+
+    private native void destroyOfflineRegion(long offlineRegionPtr);
 
     private native void setOfflineRegionObserver(
             OfflineRegion offlineRegion,

@@ -1888,6 +1888,14 @@ void JNICALL setOfflineMapboxTileCountLimit(JNIEnv *env, jobject obj, jlong defa
     defaultFileSource->setOfflineMapboxTileCountLimit(limit);
 }
 
+void JNICALL destroyOfflineRegion(JNIEnv *env, jobject obj, jlong offlineRegionPtr) {
+    mbgl::Log::Debug(mbgl::Event::JNI, "destroyOfflineRegion");
+    assert(offlineRegionPtr != 0);
+    mbgl::OfflineRegion *offlineRegion = reinterpret_cast<mbgl::OfflineRegion *>(offlineRegionPtr);
+    delete offlineRegion;
+    offlineRegion = nullptr;
+}
+
 void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineRegion_, jobject observerCallback) {
     mbgl::Log::Debug(mbgl::Event::JNI, "setOfflineRegionObserver");
 
@@ -2929,6 +2937,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
 
     const std::vector<JNINativeMethod> offlineRegionMethods = {
+        {"destroyOfflineRegion", "(J)V", reinterpret_cast<void *>(&destroyOfflineRegion)},
         {"setOfflineRegionObserver", "(Lcom/mapbox/mapboxsdk/offline/OfflineRegion;Lcom/mapbox/mapboxsdk/offline/OfflineRegion$OfflineRegionObserver;)V", reinterpret_cast<void *>(&setOfflineRegionObserver)},
         {"setOfflineRegionDownloadState", "(Lcom/mapbox/mapboxsdk/offline/OfflineRegion;I)V", reinterpret_cast<void *>(&setOfflineRegionDownloadState)},
         {"getOfflineRegionStatus", "(Lcom/mapbox/mapboxsdk/offline/OfflineRegion;Lcom/mapbox/mapboxsdk/offline/OfflineRegion$OfflineRegionStatusCallback;)V", reinterpret_cast<void *>(&getOfflineRegionStatus)},
