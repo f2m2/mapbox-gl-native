@@ -13,10 +13,10 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
-import com.mapbox.mapboxsdk.maps.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
@@ -250,8 +250,8 @@ public class OfflineActivity extends AppCompatActivity
         // Definition
         String styleURL = mMapboxMap.getStyleUrl();
         LatLngBounds bounds = mMapboxMap.getProjection().getVisibleRegion().latLngBounds;
-        double minZoom = mMapView.getZoom();
-        double maxZoom = mMapboxMap.getMaxZoom();
+        double minZoom = 14; // Switch to dynamic once map refactor is complete
+        double maxZoom = 16; // Switch to dynamic once map refactor is complete
         float pixelRatio = this.getResources().getDisplayMetrics().density;
         OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
                 styleURL, bounds, minZoom, maxZoom, pixelRatio);
