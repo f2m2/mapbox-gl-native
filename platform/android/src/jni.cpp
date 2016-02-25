@@ -1950,21 +1950,24 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             JNIEnv* env2;
             jboolean renderDetach = attach_jni_thread(theJVM, &env2, "Offline Thread");
 
-            // Choose a value for error.reason independent of the underlying int value
+            // Handle the value of reason independently of the underlying int value
             std::string errorReason;
-            if (error.reason == mbgl::Response::Error::Reason::Success) {
-                errorReason = "REASON_SUCCESS";
-            } else if (error.reason == mbgl::Response::Error::Reason::NotFound) {
-                errorReason = "REASON_NOT_FOUND";
-            } else if (error.reason == mbgl::Response::Error::Reason::Server) {
-                errorReason = "REASON_SERVER";
-            } else if (error.reason == mbgl::Response::Error::Reason::Connection) {
-                errorReason = "REASON_CONNECTION";
-            } else if (error.reason == mbgl::Response::Error::Reason::Other) {
-                errorReason = "REASON_OTHER";
-            } else {
-                mbgl::Log::Error(mbgl::Event::JNI, "Unsupported Response::Error::Reason value.");
-                return;
+            switch(error.reason) {
+                case mbgl::Response::Error::Reason::Success:
+                    errorReason = "REASON_SUCCESS";
+                    break;
+                case mbgl::Response::Error::Reason::NotFound:
+                    errorReason = "REASON_NOT_FOUND";
+                    break;
+                case mbgl::Response::Error::Reason::Server:
+                    errorReason = "REASON_SERVER";
+                    break;
+                case mbgl::Response::Error::Reason::Connection:
+                    errorReason = "REASON_CONNECTION";
+                    break;
+                case mbgl::Response::Error::Reason::Other:
+                    errorReason = "REASON_OTHER";
+                    break;
             }
 
             // Error object
