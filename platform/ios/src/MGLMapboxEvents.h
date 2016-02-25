@@ -45,11 +45,8 @@ typedef NS_MUTABLE_DICTIONARY_OF(NSString *, id) MGLMutableMapboxEventAttributes
 
 // You must call these methods from the main thread.
 //
-+ (void)pauseMetricsCollection;
-+ (void)resumeMetricsCollection;
 + (void)pushEvent:(NSString *)event withAttributes:(MGLMapboxEventAttributes *)attributeDictionary;
 + (void)pushDebugEvent:(NSString *)event withAttributes:(MGLMapboxEventAttributes *)attributeDictionary;
-+ (void)validate;
 + (void)ensureMetricsOptoutExists;
 + (void)flush;
 + (BOOL)checkPushEnabled;

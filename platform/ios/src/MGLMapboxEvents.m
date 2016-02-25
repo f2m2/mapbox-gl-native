@@ -126,7 +126,7 @@ const NSTimeInterval MGLFlushInterval = 60;
         [[NSUserDefaults standardUserDefaults] registerDefaults:@{
              @"MGLMapboxAccountType": accountTypeNumber ? accountTypeNumber : @0,
              @"MGLMapboxMetricsEnabled": @YES,
-             @"MGLMapboxMetricsDebugLoggingEnabled": @YES,
+             @"MGLMapboxMetricsDebugLoggingEnabled": @NO,
          }];
     }
 }
@@ -193,8 +193,11 @@ const NSTimeInterval MGLFlushInterval = 60;
                                                                               usingBlock:
          ^(NSNotification *notification) {
              MGLMapboxEvents *strongSelf = weakSelf;
-             [strongSelf validate];
+             [strongSelf pauseOrResumeMetricsCollectionIfRequired];
          }];
+       
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pauseOrResumeMetricsCollectionIfRequired) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pauseOrResumeMetricsCollectionIfRequired) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
     return self;
 }
@@ -229,30 +232,22 @@ const NSTimeInterval MGLFlushInterval = 60;
     [self pauseMetricsCollection];
 }
 
-+ (void)validate {
-    [[MGLMapboxEvents sharedManager] validate];
-}
-
-- (void)validate {
-    BOOL enabledInSettings = [[self class] isEnabled];
-
+- (void)pauseOrResumeMetricsCollectionIfRequired {
+    // Prevent blue status bar when host app has `when in use` permission only and it is not in foreground
+    if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusAuthorizedWhenInUse &&
+        UIApplication.sharedApplication.applicationState == UIApplicationStateBackground) {
+        [self pauseMetricsCollection];
+        return;
+    }
+    
     // Toggle pause based on current pause state and current settings state
-    // Practically, a pause only occurs because of a previous change to settings
+    // Practically, a pause only occurs because of a change to an NSUserDefaultsDidChangeNotification
+    BOOL enabledInSettings = [[self class] isEnabled];
     if (self.paused && enabledInSettings) {
         [self resumeMetricsCollection];
     } else if (!self.paused && !enabledInSettings) {
         [self pauseMetricsCollection];
     }
-    
-    if (self.paused) {
-        [self.locationManagerUtility stopUpdatingLocation];
-    } else {
-        [self.locationManagerUtility startUpdatingLocation];
-    }
-}
-
-+ (void)pauseMetricsCollection {
-    [[MGLMapboxEvents sharedManager] pauseMetricsCollection];
 }
 
 - (void)pauseMetricsCollection {
@@ -267,10 +262,6 @@ const NSTimeInterval MGLFlushInterval = 60;
     self.data = nil;
     
     [self.locationManagerUtility stopUpdatingLocation];
-}
-
-+ (void)resumeMetricsCollection {
-    [[MGLMapboxEvents sharedManager] resumeMetricsCollection];
 }
 
 - (void)resumeMetricsCollection {

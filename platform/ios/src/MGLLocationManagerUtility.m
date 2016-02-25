@@ -36,6 +36,7 @@
 
 - (void)stopUpdatingLocation {
     if ([self isUpdatingLocation]) {
+        [self.standardLocationManager stopUpdatingLocation];
         self.updatingLocation = NO;
     }
 }
@@ -59,22 +60,12 @@
 
 - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
     switch (status) {
-        case kCLAuthorizationStatusNotDetermined:
-        case kCLAuthorizationStatusRestricted:
-        case kCLAuthorizationStatusDenied:
-            [self stopUpdatingLocation];
-            break;
-        case kCLAuthorizationStatusAuthorized:
-            // Also handles kCLAuthorizationStatusAuthorizedAlways
+        case kCLAuthorizationStatusAuthorized: // Also handles kCLAuthorizationStatusAuthorizedAlways
+        case kCLAuthorizationStatusAuthorizedWhenInUse:
             [self startUpdatingLocation];
             break;
-        case kCLAuthorizationStatusAuthorizedWhenInUse:
-            if (UIApplication.sharedApplication.applicationState == UIApplicationStateBackground) {
-                // Prevent blue status bar when app is not in foreground
-                [self stopUpdatingLocation];
-            } else {
-                [self startUpdatingLocation];
-            }
+        default:
+            [self stopUpdatingLocation];
             break;
     }
 }
