@@ -135,6 +135,11 @@ extern jclass createOfflineRegionCallbackClass;
 extern jmethodID createOnCreateMethodId;
 extern jmethodID createOnErrorMethodId;
 
+extern jclass offlineRegionObserverClass;
+extern jmethodID offlineRegionObserveronStatusChangedId;
+extern jmethodID offlineRegionObserveronErrorId;
+extern jmethodID offlineRegionObserveronLimitId;
+
 extern jclass offlineRegionStatusClass;
 extern jmethodID offlineRegionStatusConstructorId;
 extern jfieldID offlineRegionStatusDownloadStateId;

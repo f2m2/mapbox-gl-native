@@ -51,6 +51,20 @@ public class OfflineRegion {
          * This method will be executed on the main thread.
          */
         void onError(OfflineRegionError error);
+
+        /*
+         * Implement this method to be notified when the limit on the number of Mapbox
+         * tiles stored for offline regions has been reached.
+         *
+         * Once the limit has been reached, the SDK will not download further offline
+         * tiles from Mapbox APIs until existing tiles have been removed. Contact your
+         * Mapbox sales representative to raise the limit.
+         *
+         * This limit does not apply to non-Mapbox tile sources.
+         *
+         * This method will be executed on the main thread.
+         */
+        void mapboxTileCountLimitExceeded(long limit);
     }
 
     /*
@@ -138,6 +152,16 @@ public class OfflineRegion {
                     @Override
                     public void run() {
                         observer.onError(error);
+                    }
+                });
+            }
+
+            @Override
+            public void mapboxTileCountLimitExceeded(final long limit) {
+                getHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        observer.mapboxTileCountLimitExceeded(limit);
                     }
                 });
             }

@@ -152,6 +152,7 @@ jmethodID createOnErrorMethodId = nullptr;
 jclass offlineRegionObserverClass = nullptr;
 jmethodID offlineRegionObserveronStatusChangedId = nullptr;
 jmethodID offlineRegionObserveronErrorId = nullptr;
+jmethodID offlineRegionObserveronLimitId = nullptr;
 
 jclass offlineRegionStatusClass = nullptr;
 jmethodID offlineRegionStatusConstructorId = nullptr;
@@ -1866,6 +1867,18 @@ void JNICALL createOfflineRegion(JNIEnv *env, jobject obj, jlong defaultFileSour
     });
 }
 
+void JNICALL setOfflineMapboxTileCountLimit(JNIEnv *env, jobject obj, jlong defaultFileSourcePtr, jlong limit) {
+    mbgl::Log::Debug(mbgl::Event::JNI, "setOfflineMapboxTileCountLimit");
+
+    // Checks
+    assert(defaultFileSourcePtr != 0);
+    assert(limit > 0);
+
+    // Set limit
+    mbgl::DefaultFileSource *defaultFileSource = reinterpret_cast<mbgl::DefaultFileSource *>(defaultFileSourcePtr);
+    defaultFileSource->setOfflineMapboxTileCountLimit(limit);
+}
+
 void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineRegion_, jobject observerCallback) {
     mbgl::Log::Debug(mbgl::Event::JNI, "setOfflineRegionObserver");
 
@@ -1929,6 +1942,19 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             // Delete global refs and detach when we're done
             env2->DeleteGlobalRef(observerCallback);
             detach_jni_thread(theJVM, &env2, renderDetach);
+        }
+
+        void mapboxTileCountLimitExceeded(uint64_t limit) override {
+            // Env
+            JNIEnv* env2;
+            jboolean renderDetach = attach_jni_thread(theJVM, &env2, "Offline Thread");
+
+            // Send limit
+            env2->CallVoidMethod(observerCallback, offlineRegionObserveronLimitId, limit);
+
+            // Delete global refs and detach when we're done
+            env2->DeleteGlobalRef(observerCallback);
+            detach_jni_thread(theJVM, &env2, renderDetach);            
         }
 
         jobject observerCallback;
@@ -2631,6 +2657,12 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return JNI_ERR;
     }
 
+    offlineRegionObserveronLimitId = env->GetMethodID(offlineRegionObserverClass, "mapboxTileCountLimitExceeded", "(J)V");
+    if (offlineRegionObserveronLimitId == nullptr) {
+        env->ExceptionDescribe();
+        return JNI_ERR;
+    }
+
     offlineRegionStatusClass = env->FindClass("com/mapbox/mapboxsdk/offline/OfflineRegionStatus");
     if (offlineRegionStatusClass == nullptr) {
         env->ExceptionDescribe();
@@ -2878,7 +2910,8 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         {"setAccessToken", "(JLjava/lang/String;)V", reinterpret_cast<void *>(&setAccessToken)},
         {"getAccessToken", "(J)Ljava/lang/String;", reinterpret_cast<void *>(&getAccessToken)},
         {"listOfflineRegions", "(JLcom/mapbox/mapboxsdk/offline/OfflineManager$ListOfflineRegionsCallback;)V", reinterpret_cast<void *>(&listOfflineRegions)},
-        {"createOfflineRegion", "(JLcom/mapbox/mapboxsdk/offline/OfflineRegionDefinition;Lcom/mapbox/mapboxsdk/offline/OfflineRegionMetadata;Lcom/mapbox/mapboxsdk/offline/OfflineManager$CreateOfflineRegionCallback;)V", reinterpret_cast<void *>(&createOfflineRegion)}
+        {"createOfflineRegion", "(JLcom/mapbox/mapboxsdk/offline/OfflineRegionDefinition;Lcom/mapbox/mapboxsdk/offline/OfflineRegionMetadata;Lcom/mapbox/mapboxsdk/offline/OfflineManager$CreateOfflineRegionCallback;)V", reinterpret_cast<void *>(&createOfflineRegion)},
+        {"setOfflineMapboxTileCountLimit", "(JJ)V", reinterpret_cast<void *>(&setOfflineMapboxTileCountLimit)}
     };
 
     if (env->RegisterNatives(offlineManagerClass, offlineManagerMethods.data(), offlineManagerMethods.size()) < 0) {
@@ -3471,6 +3504,7 @@ extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
     env->DeleteGlobalRef(offlineRegionObserverClass);
     offlineRegionObserveronStatusChangedId = nullptr;
     offlineRegionObserveronErrorId = nullptr;
+    offlineRegionObserveronLimitId = nullptr;
 
     env->DeleteGlobalRef(offlineRegionStatusClass);
     offlineRegionStatusConstructorId = nullptr;

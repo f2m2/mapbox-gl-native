@@ -314,6 +314,11 @@ public class OfflineActivity extends AppCompatActivity
                 Log.e(LOG_TAG, "onError reason: " + error.getReason());
                 Log.e(LOG_TAG, "onError message: " + error.getMessage());
             }
+
+            @Override
+            public void mapboxTileCountLimitExceeded(long limit) {
+                Log.e(LOG_TAG, "Mapbox tile count limit exceeded: " + limit);
+            }
         });
 
         // Change the region state

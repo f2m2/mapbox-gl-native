@@ -153,6 +153,15 @@ public class OfflineManager {
     }
 
     /*
+    * Changing or bypassing this limit without permission from Mapbox is prohibited
+    * by the Mapbox Terms of Service.
+    */
+    public void setOfflineMapboxTileCountLimit(long limit) {
+        setOfflineMapboxTileCountLimit(mDefaultFileSourcePtr, limit);
+    }
+
+
+    /*
      * Native methods
      */
 
@@ -168,5 +177,8 @@ public class OfflineManager {
     private native void createOfflineRegion(
             long defaultFileSourcePtr, OfflineRegionDefinition definition,
             OfflineRegionMetadata metadata, CreateOfflineRegionCallback callback);
+
+    private native void setOfflineMapboxTileCountLimit(
+            long defaultFileSourcePtr, long limit);
 
 }
