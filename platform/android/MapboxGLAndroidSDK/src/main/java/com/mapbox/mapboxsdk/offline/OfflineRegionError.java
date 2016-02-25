@@ -1,6 +1,6 @@
 package com.mapbox.mapboxsdk.offline;
 
-import android.support.annotation.IntDef;
+import android.support.annotation.StringDef;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -11,19 +11,19 @@ import java.lang.annotation.RetentionPolicy;
 public class OfflineRegionError {
 
     /**
-     * Error code, self-explanatory.
+     * Error code, as a string, self-explanatory.
      */
-    @IntDef({REASON_SUCCESS, REASON_NOT_FOUND, REASON_SERVER, REASON_CONNECTION, REASON_OTHER})
+    @StringDef({REASON_SUCCESS, REASON_NOT_FOUND, REASON_SERVER, REASON_CONNECTION, REASON_OTHER})
     @Retention(RetentionPolicy.SOURCE)
     public @interface ErrorReason {}
 
-    public static final int REASON_SUCCESS = 1;
-    public static final int REASON_NOT_FOUND = 2;
-    public static final int REASON_SERVER = 3;
-    public static final int REASON_CONNECTION = 4;
-    public static final int REASON_OTHER = 6;
+    public static final String REASON_SUCCESS = "REASON_SUCCESS";
+    public static final String REASON_NOT_FOUND = "REASON_NOT_FOUND";
+    public static final String REASON_SERVER = "REASON_SERVER";
+    public static final String REASON_CONNECTION = "REASON_CONNECTION";
+    public static final String REASON_OTHER = "REASON_OTHER";
 
-    private @ErrorReason int reason;
+    private int reason;
 
     /**
     /* An error message from the request handler, e.g. a server message or a system message
@@ -43,8 +43,18 @@ public class OfflineRegionError {
      * Getters
      */
 
-    public @ErrorReason int getReason() {
-        return reason;
+    public @ErrorReason String getReason() {
+        if (reason == 1) {
+            return REASON_SUCCESS;
+        } else if (reason == 2) {
+            return REASON_NOT_FOUND;
+        } else if (reason == 3) {
+            return REASON_SERVER;
+        } else if (reason == 4) {
+            return REASON_CONNECTION;
+        } else {
+            return REASON_OTHER;
+        }
     }
 
     public String getMessage() {
