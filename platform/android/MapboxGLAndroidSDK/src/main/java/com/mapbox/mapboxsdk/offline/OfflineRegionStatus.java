@@ -25,20 +25,21 @@ public class OfflineRegionStatus {
 
     /**
      * The number of resources that are known to be required for this region. See the
-     * documentation for `requiredResourceCountIsIndeterminate` for an important caveat
+     * documentation for `requiredResourceCountIsPrecise` for an important caveat
      * about this number.
      */
     private long requiredResourceCount = 0;
 
     /**
-     * This property is true during early phases of an offline download, when the total
-     * required resource count is unknown and requiredResourceCount is merely a lower
+     * This property is true when the value of requiredResourceCount is a precise
+     * count of the number of required resources, and false when it is merely a lower
      * bound.
      *
-     * Specifically, it is true before until the style and tile sources have been
-     * downloaded, and false thereafter.
+     * Specifically, it is false during early phases of an offline download. Once
+     * style and tile sources have been downloaded, it is possible to calculate the
+     * precise number of required resources, at which point it is set to true.
      */
-    private boolean requiredResourceCountIsIndeterminate = true;
+    private boolean requiredResourceCountIsPrecise = true;
 
     /*
      * Use setObserver(OfflineRegionObserver observer) to obtain a OfflineRegionStatus object.
@@ -77,7 +78,7 @@ public class OfflineRegionStatus {
     }
 
     public boolean isRequiredResourceCountPrecise() {
-        return !requiredResourceCountIsIndeterminate;
+        return requiredResourceCountIsPrecise;
     }
 
 }

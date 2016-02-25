@@ -159,7 +159,7 @@ jfieldID offlineRegionStatusDownloadStateId = nullptr;
 jfieldID offlineRegionStatusCompletedResourceCountId = nullptr;
 jfieldID offlineRegionStatusCompletedResourceSizeId = nullptr;
 jfieldID offlineRegionStatusRequiredResourceCountId = nullptr;
-jfieldID offlineRegionStatusRequiredResourceCountIsIndeterminateId = nullptr;
+jfieldID offlineRegionStatusRequiredResourceCountIsPreciseId = nullptr;
 
 jclass offlineRegionErrorClass = nullptr;
 jmethodID offlineRegionErrorConstructorId = nullptr;
@@ -1907,7 +1907,7 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             env2->SetLongField(jstatus, offlineRegionStatusCompletedResourceCountId, status.completedResourceCount);
             env2->SetLongField(jstatus, offlineRegionStatusCompletedResourceSizeId, status.completedResourceSize);
             env2->SetLongField(jstatus, offlineRegionStatusRequiredResourceCountId, status.requiredResourceCount);
-            env2->SetBooleanField(jstatus, offlineRegionStatusRequiredResourceCountIsIndeterminateId, status.requiredResourceCountIsIndeterminate);
+            env2->SetBooleanField(jstatus, offlineRegionStatusRequiredResourceCountIsPreciseId, status.requiredResourceCountIsPrecise);
             env2->CallVoidMethod(observerCallback, offlineRegionObserveronStatusChangedId, jstatus);
 
             // Delete global refs and detach when we're done
@@ -2014,7 +2014,7 @@ void JNICALL getOfflineRegionStatus(JNIEnv *env, jobject obj, jobject offlineReg
             env2->SetLongField(jstatus, offlineRegionStatusCompletedResourceCountId, status->completedResourceCount);
             env2->SetLongField(jstatus, offlineRegionStatusCompletedResourceSizeId, status->completedResourceSize);
             env2->SetLongField(jstatus, offlineRegionStatusRequiredResourceCountId, status->requiredResourceCount);
-            env2->SetBooleanField(jstatus, offlineRegionStatusRequiredResourceCountIsIndeterminateId, status->requiredResourceCountIsIndeterminate);
+            env2->SetBooleanField(jstatus, offlineRegionStatusRequiredResourceCountIsPreciseId, status->requiredResourceCountIsPrecise);
             env2->CallVoidMethod(statusCallback, offlineRegionStatusOnStatusId, jstatus);
         }
 
@@ -2667,8 +2667,8 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return JNI_ERR;
     }
 
-    offlineRegionStatusRequiredResourceCountIsIndeterminateId = env->GetFieldID(offlineRegionStatusClass, "requiredResourceCountIsIndeterminate", "Z");
-    if (offlineRegionStatusRequiredResourceCountIsIndeterminateId == nullptr) {
+    offlineRegionStatusRequiredResourceCountIsPreciseId = env->GetFieldID(offlineRegionStatusClass, "requiredResourceCountIsPrecise", "Z");
+    if (offlineRegionStatusRequiredResourceCountIsPreciseId == nullptr) {
         env->ExceptionDescribe();
         return JNI_ERR;
     }
@@ -3478,7 +3478,7 @@ extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
     offlineRegionStatusCompletedResourceCountId = nullptr;
     offlineRegionStatusCompletedResourceSizeId = nullptr;
     offlineRegionStatusRequiredResourceCountId = nullptr;
-    offlineRegionStatusRequiredResourceCountIsIndeterminateId = nullptr;
+    offlineRegionStatusRequiredResourceCountIsPreciseId = nullptr;
 
     env->DeleteGlobalRef(offlineRegionErrorClass);
     offlineRegionErrorConstructorId = nullptr;
