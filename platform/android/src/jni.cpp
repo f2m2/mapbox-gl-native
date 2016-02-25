@@ -119,7 +119,6 @@ jfieldID customLayerDeinitializeFunctionId = nullptr;
 // Offline declarations start
 
 jclass offlineManagerClass  = nullptr;
-jmethodID offlineManagerClassConstructorId = nullptr;
 jfieldID offlineManagerClassPtrId = nullptr;
 
 jclass listOfflineRegionsCallbackClass  = nullptr;
@@ -2469,12 +2468,6 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return JNI_ERR;
     }
 
-    offlineManagerClassConstructorId = env->GetMethodID(offlineManagerClass, "<init>", "()V");
-    if (offlineManagerClassConstructorId == nullptr) {
-        env->ExceptionDescribe();
-        return JNI_ERR;
-    }
-
     offlineManagerClassPtrId = env->GetFieldID(offlineManagerClass, "mDefaultFileSourcePtr", "J");
     if (offlineManagerClassPtrId == nullptr) {
         env->ExceptionDescribe();
@@ -3444,7 +3437,6 @@ extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
     // Offline delete begins
 
     env->DeleteGlobalRef(offlineManagerClass);
-    offlineManagerClassConstructorId = nullptr;
     offlineManagerClassPtrId = nullptr;
     offlineManagerClassPtrId = nullptr;
 
