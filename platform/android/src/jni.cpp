@@ -1950,9 +1950,26 @@ void JNICALL setOfflineRegionObserver(JNIEnv *env, jobject obj, jobject offlineR
             JNIEnv* env2;
             jboolean renderDetach = attach_jni_thread(theJVM, &env2, "Offline Thread");
 
+            // Choose a value for error.reason independent of the underlying int value
+            std::string errorReason;
+            if (error.reason == mbgl::Response::Error::Reason::Success) {
+                errorReason = "REASON_SUCCESS";
+            } else if (error.reason == mbgl::Response::Error::Reason::NotFound) {
+                errorReason = "REASON_NOT_FOUND";
+            } else if (error.reason == mbgl::Response::Error::Reason::Server) {
+                errorReason = "REASON_SERVER";
+            } else if (error.reason == mbgl::Response::Error::Reason::Connection) {
+                errorReason = "REASON_CONNECTION";
+            } else if (error.reason == mbgl::Response::Error::Reason::Other) {
+                errorReason = "REASON_OTHER";
+            } else {
+                mbgl::Log::Error(mbgl::Event::JNI, "Unsupported Response::Error::Reason value.");
+                return;
+            }
+
             // Error object
             jobject jerror = env2->NewObject(offlineRegionErrorClass, offlineRegionErrorConstructorId);
-            env2->SetIntField(jerror, offlineRegionErrorReasonId, (uint8_t)error.reason);
+            env2->SetObjectField(jerror, offlineRegionErrorReasonId, std_string_to_jstring(env2, errorReason));
             env2->SetObjectField(jerror, offlineRegionErrorMessageId, std_string_to_jstring(env2, error.message));
             env2->CallVoidMethod(observerCallback, offlineRegionObserveronErrorId, jerror);
 
@@ -2734,7 +2751,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return JNI_ERR;
     }
 
-    offlineRegionErrorReasonId = env->GetFieldID(offlineRegionErrorClass, "reason", "I");
+    offlineRegionErrorReasonId = env->GetFieldID(offlineRegionErrorClass, "reason", "Ljava/lang/String;");
     if (offlineRegionErrorReasonId == nullptr) {
         env->ExceptionDescribe();
         return JNI_ERR;

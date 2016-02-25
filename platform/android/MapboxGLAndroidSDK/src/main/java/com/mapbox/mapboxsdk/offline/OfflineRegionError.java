@@ -23,7 +23,7 @@ public class OfflineRegionError {
     public static final String REASON_CONNECTION = "REASON_CONNECTION";
     public static final String REASON_OTHER = "REASON_OTHER";
 
-    private int reason;
+    private @ErrorReason String reason;
 
     /**
     /* An error message from the request handler, e.g. a server message or a system message
@@ -44,17 +44,7 @@ public class OfflineRegionError {
      */
 
     public @ErrorReason String getReason() {
-        if (reason == 1) {
-            return REASON_SUCCESS;
-        } else if (reason == 2) {
-            return REASON_NOT_FOUND;
-        } else if (reason == 3) {
-            return REASON_SERVER;
-        } else if (reason == 4) {
-            return REASON_CONNECTION;
-        } else {
-            return REASON_OTHER;
-        }
+        return reason;
     }
 
     public String getMessage() {
