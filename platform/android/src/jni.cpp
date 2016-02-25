@@ -452,6 +452,42 @@ static jbyteArray metadata_from_native(JNIEnv* env, const std::vector<uint8_t>& 
     return j;
 }
 
+static mbgl::LatLngBounds latlngbounds_from_java(JNIEnv *env, jobject latLngBounds) {
+    // Checks
+    if (env->ExceptionCheck() || (latLngBounds == nullptr)) {
+        env->ExceptionDescribe();
+        return mbgl::LatLngBounds::empty();
+    }
+
+    jdouble swLat = env->GetDoubleField(latLngBounds, latLngBoundsLatSouthId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return mbgl::LatLngBounds::empty();
+    }
+
+    jdouble swLon = env->GetDoubleField(latLngBounds, latLngBoundsLonWestId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return mbgl::LatLngBounds::empty();
+    }
+
+    jdouble neLat = env->GetDoubleField(latLngBounds, latLngBoundsLatNorthId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return mbgl::LatLngBounds::empty();
+    }
+
+    jdouble neLon = env->GetDoubleField(latLngBounds, latLngBoundsLonEastId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return mbgl::LatLngBounds::empty();
+    }
+
+    // Build object
+    mbgl::LatLngBounds result = mbgl::LatLngBounds::hull({ swLat, swLon }, { neLat, neLon });
+    return result;
+}
+
 }
 }
 
@@ -1263,43 +1299,20 @@ void JNICALL nativeRemoveAnnotations(JNIEnv *env, jobject obj, jlong nativeMapVi
     nativeMapView->getMap().removeAnnotations(ids);
 }
 
-jlongArray JNICALL nativeGetAnnotationsInBounds(JNIEnv *env, jobject obj, jlong nativeMapViewPtr, jobject latLngBounds) {
+jlongArray JNICALL nativeGetAnnotationsInBounds(JNIEnv *env, jobject obj, jlong nativeMapViewPtr, jobject latLngBounds_) {
     mbgl::Log::Debug(mbgl::Event::JNI, "nativeGetAnnotationsInBounds");
     assert(nativeMapViewPtr != 0);
     NativeMapView *nativeMapView = reinterpret_cast<NativeMapView *>(nativeMapViewPtr);
 
-    if (env->ExceptionCheck() || (latLngBounds == nullptr)) {
-        env->ExceptionDescribe();
+    // Conversion
+    mbgl::LatLngBounds latLngBounds = latlngbounds_from_java(env, latLngBounds_);
+    if (latLngBounds.isEmpty()) {
         return nullptr;
     }
 
-    jdouble swLat = env->GetDoubleField(latLngBounds, latLngBoundsLatSouthId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble swLon = env->GetDoubleField(latLngBounds, latLngBoundsLonWestId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble neLat = env->GetDoubleField(latLngBounds, latLngBoundsLatNorthId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble neLon = env->GetDoubleField(latLngBounds, latLngBoundsLonEastId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    // assume only points for now
+    // Assume only points for now
     std::vector<uint32_t> annotations = nativeMapView->getMap().getPointAnnotationsInBounds(
-        mbgl::LatLngBounds::hull({ swLat, swLon }, { neLat, neLon }));
+        latLngBounds);
 
     return std_vector_uint_to_jobject(env, annotations);
 }
@@ -1806,12 +1819,8 @@ void JNICALL createOfflineRegion(JNIEnv *env, jobject obj, jlong defaultFileSour
     jdouble jMaxZoom = env->GetDoubleField(definition_, offlineRegionDefinitionMaxZoomId);
     jfloat jPixelRatio = env->GetFloatField(definition_, offlineRegionDefinitionPixelRatioId);
 
-    // Bounds fields
-    jdouble mLatNorth = env->GetDoubleField(jBounds, latLngBoundsLatNorthId);
-    jdouble mLatSouth = env->GetDoubleField(jBounds, latLngBoundsLatSouthId);
-    jdouble mLonEast = env->GetDoubleField(jBounds, latLngBoundsLonEastId);
-    jdouble mLonWest = env->GetDoubleField(jBounds, latLngBoundsLonWestId);
-    mbgl::LatLngBounds bounds = mbgl::LatLngBounds::hull({ mLatSouth, mLonWest }, { mLatNorth, mLonEast });
+    // Convert bounds fields to native
+    mbgl::LatLngBounds bounds = latlngbounds_from_java(env, jBounds);
 
     // Definition
     mbgl::OfflineTilePyramidRegionDefinition definition(styleURL, bounds, jMinZoom, jMaxZoom, jPixelRatio);
